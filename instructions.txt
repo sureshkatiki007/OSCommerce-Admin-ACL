@@ -1,0 +1,110 @@
+
+
+----------------------------------
+DB TABLE - administrators_acl
+----------------------------------
+	Field			Type
+	user_name		varchar(256)
+	menu_heading	varchar(256)
+	page_name		varchar(256)
+	blocked_url		varchar(256)
+	
+	
+----------------------------------
+admin/includes/boxes/configuration.php
+----------------------------------
+		array(
+			'code' => FILENAME_ADMIN_ACL,
+			'title' => BOX_CONFIGURATION_ADMIN_ACL,
+			'link' => tep_href_link(FILENAME_ADMIN_ACL)
+		),
+
+
+----------------------------------
+admin/administrator.php
+----------------------------------
+		After adding    . '<br /><br />' . tep_draw_button('Access List', 'document', tep_href_link(FILENAME_ADMIN_ACL, 'aID=' . $aInfo->user_name )) at end of variable,
+		default:
+		  if (isset($aInfo) && is_object($aInfo)) {
+			$heading[] = array('text' => '<strong>' . $aInfo->user_name . '</strong>');
+
+			$contents[] = array('align' => 'center', 'text' => tep_draw_button(IMAGE_EDIT, 'document', tep_href_link(FILENAME_ADMINISTRATORS, 'aID=' . $aInfo->id . '&action=edit')) . tep_draw_button(IMAGE_DELETE, 'trash', tep_href_link(FILENAME_ADMINISTRATORS, 'aID=' . $aInfo->id . '&action=delete')) . '<br /><br />' . tep_draw_button('Access List', 'document', tep_href_link(FILENAME_ADMIN_ACL, 'aID=' . $aInfo->user_name )) );
+		  }
+		  break;
+
+
+----------------------------------
+admin/includes/languages/english.php
+----------------------------------
+		define('BOX_CONFIGURATION_ADMIN_ACL', 'Admin Access List');
+
+
+----------------------------------
+admin/includes/filenames.php
+----------------------------------
+	    define('FILENAME_ADMIN_ACL', 'admin_acl.php');
+
+
+----------------------------------
+admin/includes/column-left.php
+----------------------------------
+		<div id="adminAppMenu">
+		<?php
+			$sql_selected = 'SELECT * FROM administrators_acl WHERE user_name="'.$admin['username'].'" group by menu_heading,page_name ';
+			$result = tep_db_query( $sql_selected );
+			$blocked_urls = array();
+			if( tep_db_num_rows( $result ) > 0 )
+			{
+				$menu_heading = '';
+				$h = 0;
+				while( $row = tep_db_fetch_array( $result ) )
+				{
+					$path = explode('&',$row['blocked_url']);
+					$menu_heading = $row['menu_heading'];
+					$blocked_urls[$menu_heading][] = $path[0];
+				}
+			}
+			foreach ($cl_box_groups as $groups)
+			{
+				$heading = $groups['heading'];
+				
+				if(!$blocked_urls[$heading]) $blocked_urls[$heading] = array();
+				
+				if( sizeof($groups['apps']) != sizeof($blocked_urls[$heading]) )
+				{
+					echo '<h3><a href="#">' . $groups['heading'] . '</a></h3>' .
+					   '<div><ul>';
+
+					foreach ($groups['apps'] as $app)
+					{
+						if(!(in_array($app['link'], $blocked_urls[$heading], true)) )
+						echo '<li><a href="' . $app['link'] . '">' . $app['title'] . '</a></li>';
+					}
+
+					echo '</ul></div>';
+				}
+			}
+		?>
+		</div>
+		
+		
+----------------------------------
+admin/includes/header.php
+----------------------------------
+		if ($messageStack->size > 0) {
+			echo $messageStack->output();
+		}
+	  
+		$sql_selected = 'SELECT * FROM administrators_acl WHERE user_name="'.$admin['username'].'" group by menu_heading,page_name ';
+		$result = tep_db_query( $sql_selected );
+		if( tep_db_num_rows( $result ) > 0 )
+		{
+			while( $row = tep_db_fetch_array( $result ) )
+			{
+				$path = explode('&',$row['blocked_url']);
+				$blocked_file = substr($path[0],strrpos($path[0],"/")+1);
+				if ($PHP_SELF == $blocked_file) {
+					die("<br><br><center>You are not authorized to view this page.\n\n</center>");
+				}
+			}
+		}
