@@ -2,7 +2,7 @@
 /*
  * admin_acl.php
  * September 29, 2006
- * author: Kristen G. Thorson
+ * author: Suresh.Katiki
  *
  *
  * Released under the GNU General Public License
